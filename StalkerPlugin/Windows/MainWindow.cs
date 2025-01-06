@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using Dalamud.Plugin.Services;
 using ImGuiNET;
 
 namespace StalkerPlugin.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private string GoatImagePath;
-    private Plugin Plugin;
+    private Plugin plugin;
     private bool show_everything = false;
+    private bool show_local = false;
 
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
@@ -27,37 +25,36 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        GoatImagePath = goatImagePath;
-        Plugin = plugin;
+        this.plugin = plugin;
     }
 
     public void Dispose() { }
-        String search_text = "";
 
+    private string search_text = "";
     public override void Draw()
     {
         if (ImGui.Button("DEW IT"))
         {
-            Plugin.Snoop();
+            plugin.Snoop();
         }
         ImGui.SameLine();
-        if (Plugin.accounts.Count == 0)
+        if (plugin.accounts.Count == 0)
         {
             ImGui.BeginDisabled();
         }
         if (ImGui.Button("DUMP IT"))
         {
-            Plugin.Dump("stalk_backup.csv");
+            plugin.Dump("stalk_backup.csv");
         }
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (Plugin.accounts.Count != 0)
+        if (plugin.accounts.Count != 0)
         {
             ImGui.BeginDisabled();
         }
         if (ImGui.Button("RESTORE IT"))
         {
-            Plugin.Restore();
+            plugin.Restore();
         }
         ImGui.EndDisabled();
         ImGui.SameLine();
@@ -71,7 +68,7 @@ public class MainWindow : Window, IDisposable
             ImGui.Button("NO");
             if (ImGui.Button("yes"))
             {
-                Plugin.Destroy();
+                plugin.Destroy();
             }
             ImGui.Button("NO");
             ImGui.Button("NO");
@@ -80,10 +77,12 @@ public class MainWindow : Window, IDisposable
             ImGui.EndPopup();
         }
         ImGui.Checkbox("SHOW EVERYTHING", ref show_everything);
-
-        ImGui.Text($"SNOOPED ACCOUNTS: {Plugin.accounts.Count}");
         ImGui.SameLine();
-        ImGui.Text($"REFRESH IN: {(300 - Plugin.stalk_frame_counter) / 60} (SAVE IN: {12 - Plugin.save_frame_coutner})");
+        ImGui.Checkbox("SHOW LOCAL", ref show_local);
+
+        ImGui.Text($"SNOOPED ACCOUNTS: {plugin.accounts.Count}");
+        ImGui.SameLine();
+        ImGui.Text($"REFRESH IN: {(300 - plugin.stalk_frame_counter) / 60} (SAVE IN: {12 - plugin.save_frame_coutner})");
 
         ImGui.InputText("NAME", ref search_text, 32);
 
@@ -94,11 +93,12 @@ public class MainWindow : Window, IDisposable
             ImGui.TableSetupColumn("NAMES");
             ImGui.TableHeadersRow();
 
-            foreach (KeyValuePair<ulong, HashSet<String>> account in Plugin.accounts)
+            foreach (var account in plugin.accounts)
             {
-                if (show_everything || account.Value.Count > 1)
+                if ((show_everything || account.Value.Count > 1)
+                     && (!show_local || plugin.last_snoop.Contains(account.Key)))
                 {
-                    string joined = $"{String.Join(", ", account.Value)}";
+                    string joined = $"{string.Join(", ", account.Value)}";
                     if (joined.IndexOf(search_text, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         ImGui.TableNextRow();

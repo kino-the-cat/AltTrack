@@ -6,18 +6,10 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using StalkerPlugin.Windows;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Objects.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System.Collections.Generic;
-using System;
 using System.Text;
-using Dalamud.Utility.Signatures;
-using Dalamud.Hooking;
-using Serilog;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using Dalamud.Memory;
 using System.Linq;
 
 namespace StalkerPlugin;
@@ -40,12 +32,13 @@ public sealed class Plugin : IDalamudPlugin
     public Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new("Stalker");
-    private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
-    public SortedDictionary<ulong, HashSet<String>> accounts = new SortedDictionary<ulong, HashSet<String>>();
+    public SortedDictionary<ulong, HashSet<string>> accounts = [];
 
-    GameHooks hook;
+    GameHooks hooks;
+
+    public HashSet<ulong> last_snoop = [];
 
     public Plugin()
     {
@@ -54,10 +47,8 @@ public sealed class Plugin : IDalamudPlugin
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
-        ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this, goatImagePath);
 
-        WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
@@ -66,10 +57,6 @@ public sealed class Plugin : IDalamudPlugin
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
-
-        // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
@@ -81,7 +68,7 @@ public sealed class Plugin : IDalamudPlugin
 
         Restore();
 
-        hook = new GameHooks(GameInteropProvider, (uint account, String name, String world) =>
+        hooks = new GameHooks(GameInteropProvider, (uint account, string name, string world) =>
         {
             AddCharacter(account, $"{name}@{world}");
         });
@@ -91,8 +78,9 @@ public sealed class Plugin : IDalamudPlugin
     {
         WindowSystem.RemoveAllWindows();
 
-        ConfigWindow.Dispose();
         MainWindow.Dispose();
+
+        hooks.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
 
@@ -106,7 +94,6 @@ public sealed class Plugin : IDalamudPlugin
 
     private void DrawUI() => WindowSystem.Draw();
 
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
     public void ToggleMainUI() => MainWindow.Toggle();
 
 
@@ -131,7 +118,6 @@ public sealed class Plugin : IDalamudPlugin
             if (save_frame_coutner++ == 12)
             {
                 Dump("stalk.csv");
-                Log.Information("DUMP");
                 save_frame_coutner = 0;
             }
 
@@ -141,7 +127,8 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Snoop()
     {
-        foreach (IGameObject obj in Objects)
+        var tmp_snoop = new HashSet<ulong>();
+        foreach (var obj in Objects)
         {
             if (obj is null)
             {
@@ -150,20 +137,24 @@ public sealed class Plugin : IDalamudPlugin
 
             if (obj!.ObjectKind == ObjectKind.Player)
             {
-                IPlayerCharacter character = (IPlayerCharacter)obj!;
-                ulong accountId = character.GetAccountId();
-                Log.Verbose($"Character: {character}, AccountID: {accountId}");
+                var character = (IPlayerCharacter)obj!;
+                var accountId = character.GetAccountId();
+                Log.Information($"{character.Name}@{character.HomeWorld.Value.Name}: {accountId}");
 
                 AddCharacter(accountId, $"{character.Name}@{character.HomeWorld.Value.Name}");
+
+                tmp_snoop.Add(accountId);
             }
         }
+
+        last_snoop = tmp_snoop;
     }
 
-    public void AddCharacter(ulong accountId, String name)
+    public void AddCharacter(ulong accountId, string name)
     {
         if (!accounts.ContainsKey(accountId))
         {
-            accounts.Add(accountId, new HashSet<string>());
+            accounts.Add(accountId, []);
         }
         var found_account = accounts[accountId];
 
@@ -195,7 +186,7 @@ public sealed class Plugin : IDalamudPlugin
         var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName!, "stalk.csv");
         if (!File.Exists(dbPath))
         {
-            accounts = new SortedDictionary<ulong, HashSet<string>>();
+            accounts = [];
             return;
         }
         var csv = File.ReadAllLines(dbPath);
@@ -205,10 +196,10 @@ public sealed class Plugin : IDalamudPlugin
         foreach (var line in csv)
         {
             var values = line.Split(",");
-            ulong accountID = (ulong)Decimal.Parse(values[0]);
+            var accountID = (ulong)decimal.Parse(values[0]);
 
-            HashSet<String> names = new HashSet<String>();
-            for (int i = 1; i < values.Length; ++i)
+            HashSet<string> names = [];
+            for (var i = 1; i < values.Length; ++i)
             {
                 names.Add(values[i]);
             }
@@ -217,17 +208,16 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    public void Dump(String filename)
+    public void Dump(string filename)
     {
         var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName!, filename);
         var csv = new StringBuilder();
-        foreach (KeyValuePair<ulong, HashSet<String>> account in accounts)
+        foreach (var account in accounts)
         {
             csv.Append(account.Key);
             foreach (var value in account.Value)
             {
-                csv.Append(",");
-                csv.Append(value);
+                csv.Append($", {value}");
             }
             csv.AppendLine();
         }
@@ -238,214 +228,6 @@ public sealed class Plugin : IDalamudPlugin
     {
         accounts.Clear();
     }
-}
-
-internal sealed class PlayerMapping
-{
-    public required ulong? AccountId { get; init; }
-    public required ulong ContentId { get; init; }
-    public required string HomeWorld { get; init; } = string.Empty;
-    public required string PlayerName { get; init; } = string.Empty;
-}
-
-
-// Mostly stolen from RetainerTrack
-internal sealed unsafe class GameHooks : IDisposable
-{
-    Action<uint, String, String> AddCB;
-    public GameHooks(IGameInteropProvider GameInteropProvider, Action<uint, String, String> add_cb)
-    {
-        Log.Error("INIT");
-
-        AddCB = add_cb;
-
-        GameInteropProvider.InitializeFromAttributes(this);
-        SocialListResultHook.Enable();
-
-        Log.Error("AAA");
-    }
-
-    public void Dispose()
-    {
-        SocialListResultHook.Dispose();
-    }
-
-    private delegate nint SocialListResultDelegate(nint a1, nint dataPtr);
-    [Signature("48 89 5C 24 10 56 48 83 EC 20 48 ?? ?? ?? ?? ?? ?? 48 8B F2 E8 ?? ?? ?? ?? 48 8B D8",
-    DetourName = nameof(ProcessSocialListResult))]
-    private Hook<SocialListResultDelegate> SocialListResultHook { get; init; } = null!;
-
-    private string WorldNumberToString(short num)
-    {
-        switch (num)
-        {
-            case 80: return "Cerberus";
-            case 83: return "Louisoix";
-            case 71: return "Moogle";
-            case 39: return "Omega";
-            case 401: return "Phantom";
-            case 97: return "Ragnarok";
-            case 400: return "Sagittarius";
-            case 85: return "Spriggan";
-            case 402: return "Alpha";
-            case 36: return "Lich";
-            case 66: return "Odin";
-            case 56: return "Phoenix";
-            case 403: return "Raiden";
-            case 67: return "Shiva";
-            case 33: return "Twintania";
-            case 42: return "Zodiark";
-            default:
-                return "HELP";
-        }
-    }
-
-    private void PrintBytes(SocialListPlayer player)
-    {
-        int size = Marshal.SizeOf(player);
-        byte[] arr = new byte[size];
-
-        IntPtr ptr = IntPtr.Zero;
-        try
-        {
-            ptr = Marshal.AllocHGlobal(size);
-            Marshal.StructureToPtr(player, ptr, true);
-            Marshal.Copy(ptr, arr, 0, size);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(ptr);
-        }
-        String re = "";
-        String res = "";
-        for (int i = 0; i < size; ++i)
-        {
-            if (arr[i] != 0)
-            {
-                res += ",   " + (char)arr[i];
-            }
-            else
-            {
-                res += ",   .";
-            }
-
-            if (arr[i] < 10)
-            {
-                re += ",   " + arr[i];
-
-            }
-            else if (arr[i] < 100)
-            {
-                re += ",  " + arr[i];
-            }
-            else
-            {
-                re += ", " + arr[i];
-            }
-        }
-        Log.Error($"{re}");
-        Log.Error($"{res}");
-    }
-    private nint ProcessSocialListResult(nint a1, nint dataPtr)
-    {
-        try
-        {
-            var result = Marshal.PtrToStructure<SocialListResultPage>(dataPtr);
-            List<PlayerMapping> mappings = new();
-            foreach (SocialListPlayer player in result.PlayerSpan)
-            {
-                if (player.ContentId == 0)
-                    continue;
-
-                var mapping = new PlayerMapping
-                {
-                    ContentId = player.ContentId,
-                    AccountId = player.AccountId != 0 ? player.AccountId : null,
-                    HomeWorld = WorldNumberToString(player.HomeWorld),
-                    PlayerName = MemoryHelper.ReadString(new nint(player.CharacterName), Encoding.ASCII, 32),
-                };
-
-                if (!string.IsNullOrEmpty(mapping.PlayerName))
-                {
-                    Log.Debug("Content id {ContentId} belongs to '{Name}' ({AccountId})", mapping.ContentId,
-                        mapping.PlayerName, mapping.AccountId);
-                    mappings.Add(mapping);
-                }
-                else
-                {
-                    Log.Debug("Content id {ContentId} didn't resolve to a player name, ignoring",
-                        mapping.ContentId);
-                }
-            }
-
-            // if (mappings.Count > 0)
-            //     Task.Run(() => _persistenceContext.HandleContentIdMapping(mappings));
-            for (int i = 0; i < mappings.Count; ++i)
-            {
-                var a = mappings[i];
-                Log.Information($"{a.PlayerName}@{a.HomeWorld}: {a.AccountId}");
-                if (a.AccountId is not null)
-                    AddCB((uint)a.AccountId, a.PlayerName, a.HomeWorld);
-                else
-                    Log.Error($"AAAAAAAAAAAAAAAAAAAAAA {a.PlayerName}");
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Could not process social list result");
-        }
-
-        return SocialListResultHook.Original(a1, dataPtr);
-    }
-
-
-
-    /// <summary>
-    /// There are some caveats here, the social list includes a LOT of things with different types
-    /// (we don't care for the result type in this plugin), see sapphire for which field is the type.
-    ///
-    /// 1 = party
-    /// 2 = friend list
-    /// 3 = link shell
-    /// 4 = player search
-    /// 5 = fc short list (first tab, with company board + actions + online members)
-    /// 6 = fc long list (members tab)
-    ///
-    /// Both 1 and 2 are sent to you on login, unprompted.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 0x420)]
-    internal struct SocialListResultPage
-    {
-        [FieldOffset(0x10)] private fixed byte Players[10 * 0x70];
-
-        public Span<SocialListPlayer> PlayerSpan => new(Unsafe.AsPointer(ref Players[0]), 10);
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 0x70, Pack = 1)]
-    internal struct SocialListPlayer
-    {
-        /// <summary>
-        /// If this is set, it means there is a player present in this slot (even if no name can be retrieved),
-        /// 0 if empty.
-        /// </summary>
-        [FieldOffset(0x00)] public readonly ulong ContentId;
-
-        /// <summary>
-        /// Only seems to be set for certain kind of social lists, e.g. friend list/FC members doesn't include any.
-        /// </summary>
-        [FieldOffset(0x18)] public readonly ulong AccountId;
-
-        /// <summary>
-        /// Maybe
-        /// </summary>
-        [FieldOffset(0x42)] public readonly short HomeWorld;
-
-        /// <summary>
-        /// This *can* be empty, e.g. if you're querying your friend list, the names are ONLY set for characters on the same world.
-        /// </summary>
-        [FieldOffset(0x44)] public fixed byte CharacterName[32];
-    }
-
 }
 
 public static class UnsafeHelper
