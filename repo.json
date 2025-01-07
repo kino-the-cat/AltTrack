@@ -3,7 +3,7 @@
     "Author": "The lovely Kino",
     "Name": "Stalker",
     "InternalName": "StalkerPlugin",
-    "AssemblyVersion": "0.0.0.2",
+    "AssemblyVersion": "0.0.0.3",
     "Description": "/stalk might do something",
     "ApplicableVersion": "any",
     "Tags": [
@@ -24,6 +24,6 @@
     "IsHide": false,
     "IsTestingExclusive": false,
     "DownloadCount": 3,
-    "LastUpdate": "1736180309"
+    "LastUpdate": "1736285438"
   }
 ]
