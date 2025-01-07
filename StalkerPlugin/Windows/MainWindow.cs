@@ -38,25 +38,10 @@ public class MainWindow : Window, IDisposable
             plugin.Snoop();
         }
         ImGui.SameLine();
-        if (plugin.accounts.Count == 0)
-        {
-            ImGui.BeginDisabled();
-        }
         if (ImGui.Button("DUMP IT"))
         {
             plugin.Dump("stalk_backup.csv");
         }
-        ImGui.EndDisabled();
-        ImGui.SameLine();
-        if (plugin.accounts.Count != 0)
-        {
-            ImGui.BeginDisabled();
-        }
-        if (ImGui.Button("RESTORE IT"))
-        {
-            plugin.Restore();
-        }
-        ImGui.EndDisabled();
         ImGui.SameLine();
         if (ImGui.Button("deleet"))
         {
