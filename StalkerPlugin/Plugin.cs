@@ -217,7 +217,7 @@ public sealed class Plugin : IDalamudPlugin
             csv.Append(account.Key);
             foreach (var value in account.Value)
             {
-                csv.Append($", {value}");
+                csv.Append($",{value}");
             }
             csv.AppendLine();
         }
