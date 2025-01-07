@@ -1,24 +1,29 @@
 [
-    {
-      "Author": "The lovely Kino",
-      "Name": "Stalker",
-      "InternalName": "StalkerPlugin",
-      "AssemblyVersion": "0.0.0.2",
-      "Description": "/stalk might do something",
-      "ApplicableVersion": "any",
-      "Tags": [
-        "stalker",
-        "matuno"
-      ],
-      "DalamudApiLevel": 11,
-      "LoadRequiredState": 0,
-      "LoadSync": false,
-      "CanUnloadAsync": false,
-      "LoadPriority": 0,
-      "Punchline": "Catch all the alts!",
-      "AcceptsFeedback": true,
-      "DownloadLinkInstall": "https://github.com/kino-the-cat/stalker_plugin/releases/download/test/latest.zip",
-      "DownloadLinkUpdate": "https://github.com/kino-the-cat/stalker_plugin/releases/download/test/latest.zip",
-      "RepoUrl": "https://github.com/kino-the-cat/stalker_plugin"
-    }
-  ]
+  {
+    "Author": "The lovely Kino",
+    "Name": "Stalker",
+    "InternalName": "StalkerPlugin",
+    "AssemblyVersion": "0.0.0.2",
+    "Description": "/stalk might do something",
+    "ApplicableVersion": "any",
+    "Tags": [
+      "stalker",
+      "matuno",
+      "accountid"
+    ],
+    "DalamudApiLevel": 11,
+    "LoadRequiredState": 0,
+    "LoadSync": false,
+    "CanUnloadAsync": false,
+    "LoadPriority": 0,
+    "Punchline": "Catch all the alts!",
+    "AcceptsFeedback": true,
+    "DownloadLinkInstall": "https://github.com/kino-the-cat/stalker_plugin/releases/download/test/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/kino-the-cat/stalker_plugin/releases/download/test/latest.zip",
+    "RepoUrl": "https://github.com/kino-the-cat/stalker_plugin",
+    "IsHide": false,
+    "IsTestingExclusive": false,
+    "DownloadCount": 3,
+    "LastUpdate": "1736180309"
+  }
+]
