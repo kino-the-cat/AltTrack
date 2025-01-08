@@ -4,8 +4,8 @@
 
   <PropertyGroup>
     <Version>0.0.0.4</Version>
-    <Description>A stalker plugin.</Description>
-    <PackageProjectUrl>https://github.com/kino-the-cat/stalker_plugin</PackageProjectUrl>
+    <Description>Alt finding plugin.</Description>
+    <PackageProjectUrl>https://github.com/kino-the-cat/AltTrack</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
     		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
@@ -20,13 +20,6 @@
     <DeterministicSourcePaths>true</DeterministicSourcePaths>
     <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=./</PathMap>
  </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="..\Data\goat.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>false</Visible>
-    </Content>
-  </ItemGroup>
   
   <ItemGroup>
     <Reference Include="Dalamud">
@@ -54,9 +47,4 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-  
-  <!-- <ItemGroup>
-    <PackageReference Include="npgsql" Version="9.0.2" />
-  </ItemGroup> -->
-
 </Project>

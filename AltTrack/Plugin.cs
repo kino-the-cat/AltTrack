@@ -4,7 +4,7 @@ using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using StalkerPlugin.Windows;
+using AltTrack.Windows;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
-namespace StalkerPlugin;
+namespace AltTrack;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -27,11 +27,11 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDutyState DutyState { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
 
-    private const string CommandName = "/stalk";
+    private const string CommandName = "/alttrack";
 
     public Configuration Configuration { get; init; }
 
-    public readonly WindowSystem WindowSystem = new("Stalker");
+    public readonly WindowSystem WindowSystem = new("AltTrack");
     private MainWindow MainWindow { get; init; }
 
     public SortedDictionary<ulong, HashSet<string>> accounts = [];
@@ -45,9 +45,7 @@ public sealed class Plugin : IDalamudPlugin
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-
-        MainWindow = new MainWindow(this, goatImagePath);
+        MainWindow = new MainWindow(this);
 
         WindowSystem.AddWindow(MainWindow);
 
@@ -84,7 +82,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
 
-        Dump("stalk.csv");
+        Dump("db.csv");
     }
 
     private void OnCommand(string command, string args)
@@ -117,7 +115,7 @@ public sealed class Plugin : IDalamudPlugin
 
             if (save_frame_coutner++ == 12)
             {
-                Dump("stalk.csv");
+                Dump("db.csv");
                 save_frame_coutner = 0;
             }
 
@@ -183,15 +181,18 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Restore()
     {
-        var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName!, "stalk.csv");
+        Load("db.csv");
+    }
+
+    public bool Load(string path)
+    {
+
+        var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName!, path);
         if (!File.Exists(dbPath))
         {
-            accounts = [];
-            return;
+            return false;
         }
         var csv = File.ReadAllLines(dbPath);
-
-        accounts.Clear();
 
         foreach (var line in csv)
         {
@@ -206,6 +207,8 @@ public sealed class Plugin : IDalamudPlugin
 
             accounts.Add(accountID, names);
         }
+
+        return true;
     }
 
     public void Dump(string filename)

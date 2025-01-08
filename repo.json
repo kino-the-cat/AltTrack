@@ -1,29 +1,30 @@
 [
   {
-    "Author": "The lovely Kino",
-    "Name": "Stalker",
-    "InternalName": "StalkerPlugin",
-    "AssemblyVersion": "0.0.0.4",
-    "Description": "/stalk might do something",
+    "Author": "Kino the Cat",
+    "Name": "AltTrack",
+    "InternalName": "AltTrack",
+    "AssemblyVersion": "0.0.0.5",
+    "Description": "Uses the public account id value to identify alt characters (that harass you)",
     "ApplicableVersion": "any",
     "Tags": [
       "stalker",
       "matuno",
-      "accountid"
+      "accountid",
+      "alt"
     ],
     "DalamudApiLevel": 11,
     "LoadRequiredState": 0,
     "LoadSync": false,
     "CanUnloadAsync": false,
     "LoadPriority": 0,
-    "Punchline": "Catch all the alts!",
+    "Punchline": "You can find alts (that harass you)",
     "AcceptsFeedback": true,
-    "DownloadLinkInstall": "https://github.com/kino-the-cat/stalker_plugin/releases/download/test/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/kino-the-cat/stalker_plugin/releases/download/test/latest.zip",
-    "RepoUrl": "https://github.com/kino-the-cat/stalker_plugin",
+    "DownloadLinkInstall": "https://github.com/kino-the-cat/AltTrack/releases/download/0.0.0.5/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/kino-the-cat/AltTrack/releases/download/0.0.0.5/latest.zip",
+    "RepoUrl": "https://github.com/kino-the-cat/AltTrack",
     "IsHide": false,
     "IsTestingExclusive": false,
     "DownloadCount": 3,
-    "LastUpdate": "1736290067"
+    "LastUpdate": "1736354801"
   }
 ]

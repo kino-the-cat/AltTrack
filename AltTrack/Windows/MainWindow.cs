@@ -5,7 +5,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
-namespace StalkerPlugin.Windows;
+namespace AltTrack.Windows;
 
 public class MainWindow : Window, IDisposable
 {
@@ -16,8 +16,8 @@ public class MainWindow : Window, IDisposable
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
     // but for ImGui the ID is "My Amazing Window##With a hidden ID"
-    public MainWindow(Plugin plugin, string goatImagePath)
-        : base("MATUNO IS A STALKER##With a hidden ID", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+    public MainWindow(Plugin plugin)
+        : base("MATUNO IS A STALKER##AltTrack hidden ID", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         SizeConstraints = new WindowSizeConstraints
         {
@@ -40,7 +40,7 @@ public class MainWindow : Window, IDisposable
         ImGui.SameLine();
         if (ImGui.Button("DUMP IT"))
         {
-            plugin.Dump("stalk_backup.csv");
+            plugin.Dump("db_backup.csv");
         }
         ImGui.SameLine();
         if (ImGui.Button("deleet"))

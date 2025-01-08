@@ -2,7 +2,7 @@
 using Dalamud.Plugin;
 using System;
 
-namespace StalkerPlugin;
+namespace AltTrack;
 
 [Serializable]
 public class Configuration : IPluginConfiguration

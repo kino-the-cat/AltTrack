@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Dalamud.Memory;
 
-namespace StalkerPlugin;
+namespace AltTrack;
 
 // Mostly stolen from RetainerTrack
 
