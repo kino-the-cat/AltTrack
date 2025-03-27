@@ -4,14 +4,18 @@ using System.Numerics;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using Dalamud.Interface.ImGuiFileDialog;
+using Serilog;
 
 namespace AltTrack.Windows;
 
 public class MainWindow : Window, IDisposable
 {
     private Plugin plugin;
-    private bool show_everything = false;
-    private bool show_local = false;
+    private bool duplicates_only = false;
+    private bool local_only = false;
+
+    FileDialogManager fileDialogManager = new FileDialogManager();
 
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
@@ -33,17 +37,40 @@ public class MainWindow : Window, IDisposable
     private string search_text = "";
     public override void Draw()
     {
-        if (ImGui.Button("DEW IT"))
+        fileDialogManager.Draw();
+
+        if (ImGui.Button("MANUAL SCAN"))
         {
             plugin.Snoop();
         }
         ImGui.SameLine();
-        if (ImGui.Button("DUMP IT"))
+        if (ImGui.Button("EXPORT"))
         {
-            plugin.Dump("db_backup.csv");
+            fileDialogManager.SaveFileDialog("SELECT", ".csv", "alttrack", ".csv", (bool selected, string path) =>
+            {
+                if (!selected)
+                {
+                    return;
+                }
+
+                plugin.Save(path);
+            });
         }
         ImGui.SameLine();
-        if (ImGui.Button("deleet"))
+        if (ImGui.Button("IMPORT"))
+        {
+            fileDialogManager.OpenFileDialog("SELECT", ".csv", (bool selected, string path) =>
+            {
+                if (!selected)
+                {
+                    return;
+                }
+
+                plugin.Load(path);
+            });
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("delete everything"))
         {
             ImGui.OpenPopup("DeletingWindow");
         }
@@ -61,13 +88,13 @@ public class MainWindow : Window, IDisposable
 
             ImGui.EndPopup();
         }
-        ImGui.Checkbox("SHOW EVERYTHING", ref show_everything);
+        ImGui.Checkbox("DUPLICATES ONLY", ref duplicates_only);
         ImGui.SameLine();
-        ImGui.Checkbox("SHOW LOCAL", ref show_local);
+        ImGui.Checkbox("LOCAL ONLY", ref local_only);
 
         ImGui.Text($"SNOOPED ACCOUNTS: {plugin.accounts.Count}");
         ImGui.SameLine();
-        ImGui.Text($"REFRESH IN: {(300 - plugin.stalk_frame_counter) / 60} (SAVE IN: {12 - plugin.save_frame_coutner})");
+        ImGui.Text($"REFRESH IN: {(plugin.stalk_frame_counter)} (SAVE IN: {plugin.save_frame_coutner})");
 
         ImGui.InputText("NAME", ref search_text, 32);
 
@@ -80,8 +107,8 @@ public class MainWindow : Window, IDisposable
 
             foreach (var account in plugin.accounts)
             {
-                if ((show_everything || account.Value.Count > 1)
-                     && (!show_local || plugin.last_snoop.Contains(account.Key)))
+                if ((!duplicates_only || account.Value.Count > 1)
+                     && (!local_only || plugin.last_snoop.Contains(account.Key)))
                 {
                     string joined = $"{string.Join(", ", account.Value)}";
                     if (joined.IndexOf(search_text, StringComparison.OrdinalIgnoreCase) >= 0)

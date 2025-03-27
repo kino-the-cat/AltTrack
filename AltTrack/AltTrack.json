@@ -2,7 +2,7 @@
     "Author": "Kino the Cat",
     "Name": "AltTrack",
     "InternalName": "AltTrack",
-    "AssemblyVersion": "0.0.0.5",
+    "AssemblyVersion": "0.0.0.7",
     "Punchline": "You can find alts (that harass you)",
     "Description": "Uses the public account id value to identify alt characters (that harass you)",
     "ApplicableVersion": "any",

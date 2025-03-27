@@ -33,6 +33,9 @@ public sealed class Plugin : IDalamudPlugin
 
     public readonly WindowSystem WindowSystem = new("AltTrack");
     private MainWindow MainWindow { get; init; }
+    private ConfigWindow ConfigWindow { get; init; }
+
+    public bool autoscan = true;
 
     public SortedDictionary<ulong, HashSet<string>> accounts = [];
 
@@ -46,8 +49,10 @@ public sealed class Plugin : IDalamudPlugin
 
         // you might normally want to embed resources and load them from the manifest stream
         MainWindow = new MainWindow(this);
+        ConfigWindow = new ConfigWindow(this);
 
         WindowSystem.AddWindow(MainWindow);
+        WindowSystem.AddWindow(ConfigWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -58,6 +63,7 @@ public sealed class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
         Framework.Update += AutoSnoop;
 
@@ -82,7 +88,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
 
-        Dump("db.csv");
+        SaveLocal("db.csv");
     }
 
     private void OnCommand(string command, string args)
@@ -93,6 +99,8 @@ public sealed class Plugin : IDalamudPlugin
     private void DrawUI() => WindowSystem.Draw();
 
     public void ToggleMainUI() => MainWindow.Toggle();
+
+    public void ToggleConfigUI() => ConfigWindow.Toggle();
 
 
     private void StartAutoSnoop(object? sender, ushort dunno)
@@ -107,19 +115,23 @@ public sealed class Plugin : IDalamudPlugin
 
     public int stalk_frame_counter = 0;
     public int save_frame_coutner = 0;
+    public int autosave_time = 3600;
+    public int autoscan_time = 300;
     private void AutoSnoop(IFramework framework)
     {
-        if (stalk_frame_counter++ == 300)
+        if (autoscan && stalk_frame_counter++ >= autoscan_time)
         {
             Snoop();
 
-            if (save_frame_coutner++ == 12)
-            {
-                Dump("db.csv");
-                save_frame_coutner = 0;
-            }
-
             stalk_frame_counter = 0;
+        }
+
+        
+        if (save_frame_coutner++ >= autosave_time)
+        {
+            SaveLocal("db.csv");
+
+            save_frame_coutner = 0;
         }
     }
 
@@ -150,6 +162,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void AddCharacter(ulong accountId, string name)
     {
+        Log.Verbose($"Adding {accountId}:{name}");
         if (!accounts.ContainsKey(accountId))
         {
             accounts.Add(accountId, []);
@@ -181,17 +194,19 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Restore()
     {
-        Load("db.csv");
+        Load(Path.Combine(PluginInterface.ConfigDirectory.FullName!, "db.csv"));
     }
 
-    public bool Load(string path)
+    public bool Load(string dbPath)
     {
 
-        var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName!, path);
         if (!File.Exists(dbPath))
         {
             return false;
         }
+
+        Log.Info($"Loading {dbPath}");
+
         var csv = File.ReadAllLines(dbPath);
 
         foreach (var line in csv)
@@ -199,21 +214,27 @@ public sealed class Plugin : IDalamudPlugin
             var values = line.Split(",");
             var accountID = (ulong)decimal.Parse(values[0]);
 
-            HashSet<string> names = [];
-            for (var i = 1; i < values.Length; ++i)
+            if (!accounts.ContainsKey(accountID))
             {
-                names.Add(values[i]);
+                accounts.Add(accountID, []);
             }
 
-            accounts.Add(accountID, names);
+            for (var i = 1; i < values.Length; ++i)
+            {
+                accounts[accountID].Add(values[i]);
+            }
         }
 
         return true;
     }
 
-    public void Dump(string filename)
+    public void SaveLocal(string filename)
     {
-        var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName!, filename);
+        Save(Path.Combine(PluginInterface.ConfigDirectory.FullName!, filename));
+    }
+
+    public void Save(string dbPath)
+    {
         var csv = new StringBuilder();
         foreach (var account in accounts)
         {
