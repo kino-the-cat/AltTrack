@@ -3,7 +3,7 @@
     "Author": "Kino the Cat",
     "Name": "AltTrack",
     "InternalName": "AltTrack",
-    "AssemblyVersion": "0.0.0.6",
+    "AssemblyVersion": "0.0.0.7",
     "Description": "Uses the public account id value to identify alt characters (that harass you)",
     "ApplicableVersion": "any",
     "Tags": [
@@ -12,19 +12,19 @@
       "accountid",
       "alt"
     ],
-    "DalamudApiLevel": 11,
+    "DalamudApiLevel": 12,
     "LoadRequiredState": 0,
     "LoadSync": false,
     "CanUnloadAsync": false,
     "LoadPriority": 0,
     "Punchline": "You can find alts (that harass you)",
     "AcceptsFeedback": true,
-    "DownloadLinkInstall": "https://github.com/kino-the-cat/AltTrack/releases/download/0.0.0.6/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/kino-the-cat/AltTrack/releases/download/0.0.0.6/latest.zip",
+    "DownloadLinkInstall": "https://github.com/kino-the-cat/AltTrack/releases/download/0.0.0.7/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/kino-the-cat/AltTrack/releases/download/0.0.0.7/latest.zip",
     "RepoUrl": "https://github.com/kino-the-cat/AltTrack",
     "IsHide": false,
     "IsTestingExclusive": false,
     "DownloadCount": 3,
-    "LastUpdate": "1736354801"
+    "LastUpdate": "1743118700"
   }
 ]
