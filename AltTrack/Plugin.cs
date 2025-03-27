@@ -39,6 +39,9 @@ public sealed class Plugin : IDalamudPlugin
 
     public SortedDictionary<ulong, HashSet<string>> accounts = [];
 
+    public ulong salt;
+    public ulong unsaltedAccountID;
+
     GameHooks hooks;
 
     public HashSet<ulong> last_snoop = [];
@@ -126,7 +129,7 @@ public sealed class Plugin : IDalamudPlugin
             stalk_frame_counter = 0;
         }
 
-        
+
         if (save_frame_coutner++ >= autosave_time)
         {
             SaveLocal("db.csv");
@@ -138,6 +141,7 @@ public sealed class Plugin : IDalamudPlugin
     public void Snoop()
     {
         var tmp_snoop = new HashSet<ulong>();
+
         foreach (var obj in Objects)
         {
             if (obj is null)
@@ -149,11 +153,33 @@ public sealed class Plugin : IDalamudPlugin
             {
                 var character = (IPlayerCharacter)obj!;
                 var accountId = character.GetAccountId();
-                Log.Information($"{character.Name}@{character.HomeWorld.Value.Name}: {accountId}");
 
-                AddCharacter(accountId, $"{character.Name}@{character.HomeWorld.Value.Name}");
+                if (salt == 0 || unsaltedAccountID != accountId)
+                {
+                    foreach (var acc in accounts)
+                    {
+                        if (acc.Value.Contains($"{character.Name}@{character.HomeWorld.Value.Name}"))
+                        {
+                            salt = acc.Key ^ (accountId >> 31);
+                            unsaltedAccountID = accountId;
 
-                tmp_snoop.Add(accountId);
+                            break;
+                        }
+                    }
+
+                    if (salt == 0)
+                    {
+                        Log.Error("FAILED, OOPS!");
+                        return;
+                    }
+                }
+
+                var accountIdRev = ((accountId >> 31) ^ salt) % 0x100000000;
+                Log.Information($"{character.Name}@{character.HomeWorld.Value.Name}: {accountId} -> {accountIdRev}");
+
+                AddCharacter(accountIdRev, $"{character.Name}@{character.HomeWorld.Value.Name}");
+
+                tmp_snoop.Add(accountIdRev);
             }
         }
 

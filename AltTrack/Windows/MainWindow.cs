@@ -92,6 +92,12 @@ public class MainWindow : Window, IDisposable
         ImGui.SameLine();
         ImGui.Checkbox("LOCAL ONLY", ref local_only);
 
+        ImGui.Text($"SALTY: {plugin.salt}");
+        ImGui.SameLine();
+        if (ImGui.Button("RESALT!?")) {
+            plugin.salt = 0;
+        }
+
         ImGui.Text($"SNOOPED ACCOUNTS: {plugin.accounts.Count}");
         ImGui.SameLine();
         ImGui.Text($"REFRESH IN: {(plugin.stalk_frame_counter)} (SAVE IN: {plugin.save_frame_coutner})");
