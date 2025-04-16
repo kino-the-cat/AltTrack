@@ -3,7 +3,7 @@
   <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
-    <Version>0.0.0.7</Version>
+    <Version>0.0.0.8</Version>
     <Description>Alt finding plugin.</Description>
     <PackageProjectUrl>https://github.com/kino-the-cat/AltTrack</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
