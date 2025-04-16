@@ -75,9 +75,14 @@ public sealed class Plugin : IDalamudPlugin
 
         Restore();
 
-        hooks = new GameHooks(GameInteropProvider, (uint account, string name, string world) =>
+        hooks = new GameHooks(GameInteropProvider, (uint accountId, string name, string world) =>
         {
-            AddCharacter(account, $"{name}@{world}");
+            if (salt == 0) {
+                Log.Error("Missing salt?");
+                return;
+            }
+            var accountIdRev = ((accountId >> 31) ^ salt) % 0x100000000;
+            AddCharacter(accountIdRev, $"{name}@{world}");
         });
     }
 
@@ -142,6 +147,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         var tmp_snoop = new HashSet<ulong>();
 
+        bool first = true;
+
         foreach (var obj in Objects)
         {
             if (obj is null)
@@ -154,12 +161,19 @@ public sealed class Plugin : IDalamudPlugin
                 var character = (IPlayerCharacter)obj!;
                 var accountId = character.GetAccountId();
 
-                if (salt == 0 || unsaltedAccountID != accountId)
+                if (salt == 0 || (unsaltedAccountID != accountId && first))
                 {
+                    Log.Information($"\nResalting {character.Name} {accountId}");
                     foreach (var acc in accounts)
                     {
+
                         if (acc.Value.Contains($"{character.Name}@{character.HomeWorld.Value.Name}"))
                         {
+                            if (acc.Key == 0)
+                            {
+                                Log.Information($"Oops, let's just ignore that. ({acc.Key ^ (accountId >> 31)})");
+                                // continue;
+                            }
                             salt = acc.Key ^ (accountId >> 31);
                             unsaltedAccountID = accountId;
 
@@ -173,9 +187,11 @@ public sealed class Plugin : IDalamudPlugin
                         return;
                     }
                 }
+                first = false;
+
 
                 var accountIdRev = ((accountId >> 31) ^ salt) % 0x100000000;
-                Log.Information($"{character.Name}@{character.HomeWorld.Value.Name}: {accountId} -> {accountIdRev}");
+                Log.Verbose($"{character.Name}@{character.HomeWorld.Value.Name}: {accountId} -> {accountIdRev}");
 
                 AddCharacter(accountIdRev, $"{character.Name}@{character.HomeWorld.Value.Name}");
 
@@ -188,7 +204,6 @@ public sealed class Plugin : IDalamudPlugin
 
     public void AddCharacter(ulong accountId, string name)
     {
-        Log.Verbose($"Adding {accountId}:{name}");
         if (!accounts.ContainsKey(accountId))
         {
             accounts.Add(accountId, []);
