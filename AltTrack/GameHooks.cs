@@ -25,8 +25,8 @@ internal sealed class PlayerMapping
 
 internal sealed unsafe class GameHooks : IDisposable
 {
-    Action<uint, String, String> addCB;
-    public GameHooks(IGameInteropProvider GameInteropProvider, Action<uint, String, String> add_cb)
+    Action<ulong, String, String> addCB;
+    public GameHooks(IGameInteropProvider GameInteropProvider, Action<ulong, String, String> add_cb)
     {
         addCB = add_cb;
 
@@ -154,7 +154,7 @@ internal sealed unsafe class GameHooks : IDisposable
                 var a = mappings[i];
                 Log.Information($"{a.PlayerName}@{a.HomeWorld}: {a.AccountId}");
                 if (a.AccountId is not null)
-                    addCB((uint)a.AccountId, a.PlayerName, a.HomeWorld);
+                    addCB(a.AccountId.Value, a.PlayerName, a.HomeWorld);
             }
         }
         catch (Exception e)

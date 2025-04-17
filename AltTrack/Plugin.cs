@@ -75,7 +75,7 @@ public sealed class Plugin : IDalamudPlugin
 
         Restore();
 
-        hooks = new GameHooks(GameInteropProvider, (uint accountId, string name, string world) =>
+        hooks = new GameHooks(GameInteropProvider, (ulong accountId, string name, string world) =>
         {
             if (salt == 0) {
                 Log.Error("Missing salt?");
